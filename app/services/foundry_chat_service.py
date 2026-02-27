@@ -45,36 +45,20 @@ async def chat_with_foundry_agent(message: str, context: Optional[Dict[str, Any]
     except httpx.TimeoutException as e:
         raise HTTPException(
             status_code=504,
-            detail={
-                "error": "Request timeout",
-                "message": "The request to Foundry Agent timed out",
-                "details": str(e)
-            }
+            detail="Request to Foundry Agent timed out"
         )
     except httpx.HTTPStatusError as e:
         raise HTTPException(
             status_code=e.response.status_code,
-            detail={
-                "error": "HTTP error",
-                "message": f"Foundry Agent returned status {e.response.status_code}",
-                "details": str(e)
-            }
+            detail=f"Foundry Agent returned status {e.response.status_code}"
         )
     except httpx.RequestError as e:
         raise HTTPException(
             status_code=503,
-            detail={
-                "error": "Request error",
-                "message": "Failed to connect to Foundry Agent",
-                "details": str(e)
-            }
+            detail="Failed to connect to Foundry Agent"
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail={
-                "error": "Unknown error",
-                "message": "An unexpected error occurred",
-                "details": str(e)
-            }
+            detail="An unexpected error occurred while communicating with Foundry Agent"
         )
