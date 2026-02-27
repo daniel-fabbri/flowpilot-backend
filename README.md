@@ -145,6 +145,7 @@ A complete Python backend API for project management using FastAPI, integrated w
 ### Community
 - `POST /api/v1/community` - Create a new community entry
 - `GET /api/v1/community` - List all community entries
+- `GET /api/v1/community/{id}` - Get a specific community entry
 - `GET /api/v1/community/projects/{project_id}/community` - Get community for a project
 - `PUT /api/v1/community/{id}` - Update a community entry
 - `DELETE /api/v1/community/{id}` - Soft delete a community entry

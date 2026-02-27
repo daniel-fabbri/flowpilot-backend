@@ -1,5 +1,6 @@
 import httpx
 from typing import Dict, Any, Optional
+from fastapi import HTTPException
 from integrations.foundry_config import foundry_config
 
 
@@ -15,8 +16,7 @@ async def chat_with_foundry_agent(message: str, context: Optional[Dict[str, Any]
         Dictionary containing the agent's response
         
     Raises:
-        httpx.HTTPError: If the request fails
-        httpx.TimeoutException: If the request times out
+        HTTPException: If the request fails
     """
     endpoint = foundry_config.get_agent_endpoint()
     
@@ -43,26 +43,38 @@ async def chat_with_foundry_agent(message: str, context: Optional[Dict[str, Any]
             response.raise_for_status()
             return response.json()
     except httpx.TimeoutException as e:
-        return {
-            "error": "Request timeout",
-            "message": "The request to Foundry Agent timed out",
-            "details": str(e)
-        }
+        raise HTTPException(
+            status_code=504,
+            detail={
+                "error": "Request timeout",
+                "message": "The request to Foundry Agent timed out",
+                "details": str(e)
+            }
+        )
     except httpx.HTTPStatusError as e:
-        return {
-            "error": "HTTP error",
-            "message": f"Foundry Agent returned status {e.response.status_code}",
-            "details": str(e)
-        }
+        raise HTTPException(
+            status_code=e.response.status_code,
+            detail={
+                "error": "HTTP error",
+                "message": f"Foundry Agent returned status {e.response.status_code}",
+                "details": str(e)
+            }
+        )
     except httpx.RequestError as e:
-        return {
-            "error": "Request error",
-            "message": "Failed to connect to Foundry Agent",
-            "details": str(e)
-        }
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "Request error",
+                "message": "Failed to connect to Foundry Agent",
+                "details": str(e)
+            }
+        )
     except Exception as e:
-        return {
-            "error": "Unknown error",
-            "message": "An unexpected error occurred",
-            "details": str(e)
-        }
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Unknown error",
+                "message": "An unexpected error occurred",
+                "details": str(e)
+            }
+        )

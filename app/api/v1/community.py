@@ -46,6 +46,20 @@ def list_community(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
     return results
 
 
+@router.get("/{id}", response_model=CommunityRead)
+def get_community(id: int, db: Session = Depends(get_db)):
+    """
+    Get a specific community entry by ID.
+    """
+    community = db.query(Community).filter(Community.id == id, Community.deleted_at.is_(None)).first()
+    if not community:
+        raise HTTPException(status_code=404, detail="Community entry not found")
+    
+    result = CommunityRead.model_validate(community)
+    result.team = json.loads(community.team)
+    return result
+
+
 
 
 
