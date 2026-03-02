@@ -26,9 +26,15 @@ def create_todo(todo: TodoCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_todo)
     
-    result = TodoRead.model_validate(db_todo)
-    result.scope = json.loads(db_todo.scope)
-    return result
+    return TodoRead(
+        id=db_todo.id,
+        project_id=db_todo.project_id,
+        scope=json.loads(db_todo.scope),
+        status=db_todo.status,
+        created_at=db_todo.created_at,
+        updated_at=db_todo.updated_at,
+        deleted_at=db_todo.deleted_at
+    )
 
 
 @router.get("", response_model=List[TodoRead])
@@ -36,15 +42,20 @@ def list_todos(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     List all todos (excluding soft-deleted ones).
     """
-    todos = db.query(Todo).filter(Todo.deleted_at.is_(None)).offset(skip).limit(limit).all()
+    todos = db.query(Todo).filter(Todo.deleted_at.is_(None)).order_by(Todo.id).offset(skip).limit(limit).all()
     
-    results = []
-    for todo in todos:
-        result = TodoRead.model_validate(todo)
-        result.scope = json.loads(todo.scope)
-        results.append(result)
-    
-    return results
+    return [
+        TodoRead(
+            id=t.id,
+            project_id=t.project_id,
+            scope=json.loads(t.scope),
+            status=t.status,
+            created_at=t.created_at,
+            updated_at=t.updated_at,
+            deleted_at=t.deleted_at
+        )
+        for t in todos
+    ]
 
 
 @router.get("/{id}", response_model=TodoRead)
@@ -56,9 +67,15 @@ def get_todo(id: int, db: Session = Depends(get_db)):
     if not todo:
         raise HTTPException(status_code=404, detail="Todo not found")
     
-    result = TodoRead.model_validate(todo)
-    result.scope = json.loads(todo.scope)
-    return result
+    return TodoRead(
+        id=todo.id,
+        project_id=todo.project_id,
+        scope=json.loads(todo.scope),
+        status=todo.status,
+        created_at=todo.created_at,
+        updated_at=todo.updated_at,
+        deleted_at=todo.deleted_at
+    )
 
 
 
@@ -82,9 +99,15 @@ def update_todo(id: int, todo_update: TodoUpdate, db: Session = Depends(get_db))
     db.commit()
     db.refresh(todo)
     
-    result = TodoRead.model_validate(todo)
-    result.scope = json.loads(todo.scope)
-    return result
+    return TodoRead(
+        id=todo.id,
+        project_id=todo.project_id,
+        scope=json.loads(todo.scope),
+        status=todo.status,
+        created_at=todo.created_at,
+        updated_at=todo.updated_at,
+        deleted_at=todo.deleted_at
+    )
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -109,12 +132,17 @@ def get_todo_status_reports(todo_id: int, skip: int = 0, limit: int = 100, db: S
     status_reports = db.query(StatusReport).filter(
         StatusReport.todo_id == todo_id,
         StatusReport.deleted_at.is_(None)
-    ).offset(skip).limit(limit).all()
+    ).order_by(StatusReport.id).offset(skip).limit(limit).all()
     
-    results = []
-    for status_report in status_reports:
-        result = StatusReportRead.model_validate(status_report)
-        result.scope = json.loads(status_report.scope)
-        results.append(result)
-    
-    return results
+    return [
+        StatusReportRead(
+            id=sr.id,
+            todo_id=sr.todo_id,
+            scope=json.loads(sr.scope),
+            status=sr.status,
+            created_at=sr.created_at,
+            updated_at=sr.updated_at,
+            deleted_at=sr.deleted_at
+        )
+        for sr in status_reports
+    ]

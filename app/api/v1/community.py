@@ -25,9 +25,15 @@ def create_community(community: CommunityCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(db_community)
     
-    result = CommunityRead.model_validate(db_community)
-    result.team = json.loads(db_community.team)
-    return result
+    return CommunityRead(
+        id=db_community.id,
+        project_id=db_community.project_id,
+        team=json.loads(db_community.team),
+        role=db_community.role,
+        created_at=db_community.created_at,
+        updated_at=db_community.updated_at,
+        deleted_at=db_community.deleted_at
+    )
 
 
 @router.get("", response_model=List[CommunityRead])
@@ -35,15 +41,20 @@ def list_community(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
     """
     List all community entries (excluding soft-deleted ones).
     """
-    communities = db.query(Community).filter(Community.deleted_at.is_(None)).offset(skip).limit(limit).all()
+    communities = db.query(Community).filter(Community.deleted_at.is_(None)).order_by(Community.id).offset(skip).limit(limit).all()
     
-    results = []
-    for community in communities:
-        result = CommunityRead.model_validate(community)
-        result.team = json.loads(community.team)
-        results.append(result)
-    
-    return results
+    return [
+        CommunityRead(
+            id=c.id,
+            project_id=c.project_id,
+            team=json.loads(c.team),
+            role=c.role,
+            created_at=c.created_at,
+            updated_at=c.updated_at,
+            deleted_at=c.deleted_at
+        )
+        for c in communities
+    ]
 
 
 @router.get("/{id}", response_model=CommunityRead)
@@ -55,9 +66,15 @@ def get_community(id: int, db: Session = Depends(get_db)):
     if not community:
         raise HTTPException(status_code=404, detail="Community entry not found")
     
-    result = CommunityRead.model_validate(community)
-    result.team = json.loads(community.team)
-    return result
+    return CommunityRead(
+        id=community.id,
+        project_id=community.project_id,
+        team=json.loads(community.team),
+        role=community.role,
+        created_at=community.created_at,
+        updated_at=community.updated_at,
+        deleted_at=community.deleted_at
+    )
 
 
 
@@ -81,9 +98,15 @@ def update_community(id: int, community_update: CommunityUpdate, db: Session = D
     db.commit()
     db.refresh(community)
     
-    result = CommunityRead.model_validate(community)
-    result.team = json.loads(community.team)
-    return result
+    return CommunityRead(
+        id=community.id,
+        project_id=community.project_id,
+        team=json.loads(community.team),
+        role=community.role,
+        created_at=community.created_at,
+        updated_at=community.updated_at,
+        deleted_at=community.deleted_at
+    )
 
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)

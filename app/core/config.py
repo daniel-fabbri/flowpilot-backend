@@ -1,22 +1,22 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import urllib
 
 
 class Settings(BaseSettings):
     """
     Application settings loaded from environment variables.
     """
-    # SQL Server Configuration
-    SQLSERVER_USER: str
-    SQLSERVER_PASSWORD: str
-    SQLSERVER_SERVER: str
-    SQLSERVER_PORT: str = "1433"
-    SQLSERVER_DB: str
+    # SQL Server Configuration (Windows Authentication)
+    DB_SERVER: str = "localhost\\SQLEXPRESS"
+    DB_NAME: str = "flowpilot_db"
+    DB_ENCRYPT: str = "no"
+    DB_TRUST_CERT: str = "yes"
     
     # Foundry Configuration
-    FOUNDRY_BASE_URL: str
-    FOUNDRY_API_KEY: str
-    FOUNDRY_AGENT_ID: str
+    FOUNDRY_BASE_URL: str = "https://your-foundry-instance.com"
+    FOUNDRY_API_KEY: str = "your_foundry_api_key"
+    FOUNDRY_AGENT_ID: str = "your_agent_id"
     
     # Application Settings
     APP_NAME: str = "FlowPilot Backend"
@@ -26,14 +26,17 @@ class Settings(BaseSettings):
     @property
     def database_url(self) -> str:
         """
-        Construct SQL Server connection string for SQLAlchemy.
-        Format: mssql+pyodbc://USER:PASSWORD@SERVER:PORT/DATABASE?driver=ODBC+Driver+17+for+SQL+Server
+        Construct SQL Server connection string for SQLAlchemy with Windows Authentication.
+        Format: mssql+pyodbc:///?odbc_connect=...
         """
-        return (
-            f"mssql+pyodbc://{self.SQLSERVER_USER}:{self.SQLSERVER_PASSWORD}"
-            f"@{self.SQLSERVER_SERVER}:{self.SQLSERVER_PORT}/{self.SQLSERVER_DB}"
-            f"?driver=ODBC+Driver+17+for+SQL+Server"
+        params = urllib.parse.quote_plus(
+            f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+            f"SERVER={self.DB_SERVER};"
+            f"DATABASE={self.DB_NAME};"
+            f"Trusted_Connection=yes;"
+            f"TrustServerCertificate={self.DB_TRUST_CERT};"
         )
+        return f"mssql+pyodbc:///?odbc_connect={params}"
     
     class Config:
         env_file = ".env"
